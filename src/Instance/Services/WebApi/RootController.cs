@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -41,28 +42,21 @@ namespace SimpleTransferHost.Instance.Services.WebApi
 
             var op = await _buffer.ReceiveAsync(ct);
 
-            _logger.LogInformation("Consumed awaiting Stream, returning PushStreamContent");
+            _logger.LogInformation("Consumed awaiting Stream, pushing POST stream into the GET stream");
+            
+            await op.Data.DataStream.CopyToAsync(Response.Body, ct);
 
-            var result = new HttpResponseMessage(HttpStatusCode.OK)
+            op.OnFinish();
+
+            ContentDisposition cd = new ContentDisposition
             {
-                Content = new PushStreamContent(async (stream, _, __) =>
-                {
-                    _logger.LogInformation("Pushing POST stream into the GET stream");
-
-                    await op.Data.DataStream.CopyToAsync(stream, ct);
-                    await stream.FlushAsync();
-                    stream.Close();
-
-                    op.OnFinish();
-                }, new MediaTypeHeaderValue("application/octet-stream"))
+                FileName = op.Data.FileName,
+                Inline = true  // false = prompt the user for downloading;  true = browser to try to show the file inline
             };
 
-            result.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-            {
-                FileName = op.Data.FileName
-            };
+            Response.Headers.Add("Content-Disposition", cd.ToString());
 
-            return result;
+            return Ok();
         }
 
         [HttpPost]
