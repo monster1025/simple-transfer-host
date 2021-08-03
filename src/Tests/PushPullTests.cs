@@ -57,7 +57,7 @@ namespace Tests
             var getRoot = new RootController(bb, NullLogger<RootController>.Instance);
             var postRoot = new RootController(bb, NullLogger<RootController>.Instance);
 
-            Task<object> getTask = getRoot.Get(RootController._clientKey, CancellationToken.None);
+            Task getTask = getRoot.Get(RootController._clientKey, CancellationToken.None);
 
             var getContext = new ControllerContext
             {
@@ -74,14 +74,11 @@ namespace Tests
 
             var postTask = postRoot.Post(RootController._serverKey, CancellationToken.None);
 
-            await Task.WhenAll(getTask.ContinueWith(async T =>
-            {
-                var response = (OkResult)T.Result;
+            await Task.WhenAll(getTask, postTask);
 
-                writeStream.Seek(0, SeekOrigin.Begin);
-                byte[] read = writeStream.ToArray();
-                read.Length.ShouldBe(50000);
-            }), postTask);
+            writeStream.Seek(0, SeekOrigin.Begin);
+            byte[] read = writeStream.ToArray();
+            read.Length.ShouldBe(50000);
 
             postTask.Result.StatusCode.ShouldBe((int)HttpStatusCode.OK);
         }

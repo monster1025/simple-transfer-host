@@ -119,9 +119,10 @@ namespace Instance
                                 endpoints.MapControllers();
                             });
                         })
-                        .UseIIS()
-                        .UseIISIntegration()
-                        .UseKestrel();
+                        .UseKestrel(options =>
+                        {
+                            options.Limits.MaxRequestBodySize = null;
+                        });
                 })
                 .ConfigureLogging(c =>
                 {
