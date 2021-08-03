@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // In SDK-style projects such as this one, several assembly attributes that were historically
@@ -17,3 +18,4 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("83585943-26a6-4a4a-88a8-4b6ae77933d3")]
 [assembly: ApiController]
+[assembly: InternalsVisibleTo("Tests")]

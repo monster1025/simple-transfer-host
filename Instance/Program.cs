@@ -1,20 +1,23 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
-using SimpleTransferHost.Instance.Services;
-using System;
+using SimpleTransferHost.Instance.Entities;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Instance
 {
-    class Program
+    public static class Program
     {
         private static void ConfigureHostConfiguration(IConfigurationBuilder cfg, IReadOnlyCollection<string> args)
         {
@@ -32,7 +35,7 @@ namespace Instance
             cfg.AddEnvironmentVariables(prefix: $"{applicationName}:");
         }
 
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             #region Config
 
@@ -50,15 +53,18 @@ namespace Instance
             #endregion
             #region Logger Factory
 
-            var loggerFactory = new LoggerFactory();
+            LoggerFactory loggerFactory = new();
 
             LogFactory nLogFactory = LogManager.Setup(builder =>
             {
                 builder.LoadConfigurationFromSection(_configuration, "Logging:NLog");
             });
 
-            var provider = new NLogLoggerProvider(new NLogProviderOptions(), nLogFactory);
-            provider.Options.IncludeScopes = true;
+            var provider = new NLogLoggerProvider(new NLogProviderOptions
+            {
+                IncludeScopes = true
+            }, nLogFactory);
+
             loggerFactory.AddProvider(provider);
 
             #endregion
@@ -74,6 +80,7 @@ namespace Instance
                 {
                     containerBuilder
                         .RegisterInstance(loggerFactory)
+                        .As<LoggerFactory>()
                         .SingleInstance()
                         .ExternallyOwned();
 
@@ -81,8 +88,45 @@ namespace Instance
                         .RegisterInstance(hostContext.Configuration)
                         .SingleInstance();
 
-                    containerBuilder.RegisterType<ConnectorService>().AsSelf().SingleInstance();
-                    containerBuilder.RegisterType<WebServerHostedService>().As<IHostedService>().SingleInstance();
+                    containerBuilder
+                        .Register(c =>
+                        {
+                            return new BufferBlock<AsyncOp<FileStreamData>>(new DataflowBlockOptions
+                            {
+                                BoundedCapacity = 1
+                            });
+                        })
+                        .AsSelf()
+                        .SingleInstance();
+                })
+                .ConfigureWebHost(webConfig =>
+                {
+                    webConfig
+                        .ConfigureServices(c =>
+                         {
+                             c.AddRouting();
+                             c.AddControllers();
+                         })
+                        .Configure(app =>
+                        {
+                            app.UsePathBase("/simple-transfer-host");
+
+                            app.UseRouting();
+                            app.UseDeveloperExceptionPage();
+
+                            app.UseEndpoints(endpoints =>
+                            {
+                                endpoints.MapControllers();
+                            });
+                        })
+                        .UseIIS()
+                        .UseIISIntegration()
+                        .UseKestrel();
+                })
+                .ConfigureLogging(c =>
+                {
+                    c.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                    c.AddNLog(_ => nLogFactory);
                 })
                 .UseConsoleLifetime()
                 .Build();
