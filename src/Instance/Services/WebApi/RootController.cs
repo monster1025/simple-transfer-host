@@ -42,12 +42,6 @@ namespace SimpleTransferHost.Instance.Services.WebApi
 
             var op = await _buffer.ReceiveAsync(ct);
 
-            _logger.LogInformation("Consumed awaiting Stream, pushing POST stream into the GET stream");
-            
-            await op.Data.DataStream.CopyToAsync(Response.Body, ct);
-
-            op.OnFinish();
-
             ContentDisposition cd = new ContentDisposition
             {
                 FileName = op.Data.FileName,
@@ -55,6 +49,12 @@ namespace SimpleTransferHost.Instance.Services.WebApi
             };
 
             Response.Headers.Add("Content-Disposition", cd.ToString());
+
+            _logger.LogInformation("Consumed awaiting Stream, pushing POST stream into the GET stream");
+
+            await op.Data.DataStream.CopyToAsync(Response.Body, ct);
+
+            op.OnFinish();
 
             return Ok();
         }
