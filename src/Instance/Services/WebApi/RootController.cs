@@ -31,11 +31,11 @@ namespace SimpleTransferHost.Instance.Services.WebApi
         }
 
         [HttpGet]
-        public async Task<object> Get(Guid clientKey, CancellationToken ct)
+        public async Task Get(Guid clientKey, CancellationToken ct)
         {
             if (clientKey != _clientKey)
             {
-                return Unauthorized();
+                Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             }
 
             _logger.LogInformation("Received GET request");
@@ -52,11 +52,11 @@ namespace SimpleTransferHost.Instance.Services.WebApi
 
             _logger.LogInformation("Consumed awaiting Stream, pushing POST stream into the GET stream");
 
+            Response.StatusCode = (int)HttpStatusCode.OK;
+
             await op.Data.DataStream.CopyToAsync(Response.Body, ct);
 
             op.OnFinish();
-
-            return Ok();
         }
 
         [HttpPost]
