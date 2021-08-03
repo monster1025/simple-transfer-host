@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "STH Initiator": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Agent\\Downloads\\Merlin Season 4 720p\\Merlin.s04e13.rus.eng.720p.mkv\""
+    }
+  }
+}
