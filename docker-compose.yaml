@@ -1,0 +1,14 @@
+version: '3'
+services:
+  simple-file-transfer:
+    build: ./
+    container_name: simple-file-transfer
+    restart: always
+    ports:
+      - "8182:80"
+    environment:
+      - TZ=Europe/Moscow
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m 
