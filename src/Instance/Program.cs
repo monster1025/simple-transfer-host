@@ -119,8 +119,8 @@ namespace Instance
                                 endpoints.MapControllers();
                             });
                         })
-                        .UseIIS()
-                        .UseIISIntegration()
+                        //.UseIIS()
+                        //.UseIISIntegration()
                         .UseKestrel();
                 })
                 .ConfigureLogging(c =>
