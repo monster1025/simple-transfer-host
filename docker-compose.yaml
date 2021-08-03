@@ -1,11 +1,9 @@
 version: '3'
 services:
-  gatekeeper:
+  simple-file-transfer:
     build: ./
-    container_name: gatekeeper
+    container_name: simple-file-transfer
     restart: always
-    volumes:
-      - "./error.log:/app/error.log"
     environment:
       - TZ=Europe/Moscow
     logging:
