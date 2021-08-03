@@ -1,6 +1,7 @@
 using FakeItEasy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using NUnit.Framework;
 using Shouldly;
@@ -45,8 +46,8 @@ namespace Tests
                 BoundedCapacity = 1
             });
 
-            var getRoot = new RootController(bb);
-            var postRoot = new RootController(bb);
+            var getRoot = new RootController(bb, NullLogger<RootController>.Instance);
+            var postRoot = new RootController(bb, NullLogger<RootController>.Instance);
 
             Task<object> getTask = getRoot.Get(RootController._clientKey, CancellationToken.None);
 
