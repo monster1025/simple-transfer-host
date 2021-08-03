@@ -60,6 +60,7 @@ namespace SimpleTransferHost.Instance.Services.WebApi
         }
 
         [HttpPost]
+        [RequestSizeLimit(long.MaxValue)]
         public async Task<StatusCodeResult> Post(Guid serverKey, CancellationToken ct)
         {
             if (serverKey != _serverKey)
