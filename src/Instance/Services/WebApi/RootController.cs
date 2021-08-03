@@ -21,10 +21,12 @@ namespace SimpleTransferHost.Instance.Services.WebApi
         internal static readonly Guid _serverKey = new Guid("D53F2418-10C9-4ABC-9995-14C5C732ABD6");
 
         private readonly BufferBlock<AsyncOp<FileStreamData>> _buffer;
+        private readonly ILogger<RootController> _logger;
 
-        public RootController(BufferBlock<AsyncOp<FileStreamData>> buffer)
+        public RootController(BufferBlock<AsyncOp<FileStreamData>> buffer, ILogger<RootController> logger)
         {
             _buffer = buffer;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -35,12 +37,18 @@ namespace SimpleTransferHost.Instance.Services.WebApi
                 return Unauthorized();
             }
 
+            _logger.LogInformation("Received GET request");
+
             var op = await _buffer.ReceiveAsync(ct);
+
+            _logger.LogInformation("Consumed awaiting Stream, returning PushStreamContent");
 
             var result = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new PushStreamContent(async (stream, _, __) =>
                 {
+                    _logger.LogInformation("Pushing POST stream into the GET stream");
+
                     await op.Data.DataStream.CopyToAsync(stream, ct);
                     await stream.FlushAsync();
                     stream.Close();
@@ -79,7 +87,11 @@ namespace SimpleTransferHost.Instance.Services.WebApi
 
             TaskCompletionSource tcs = new();
 
+            _logger.LogInformation("Received POST push, trying to find buffer reader");
+
             bool result = await _buffer.SendAsync(new AsyncOp<FileStreamData>(new FileStreamData(filename, Request.Body), () => tcs.SetResult(), ct), ct);
+
+            _logger.LogInformation("Reader consumed our stream message, waiting for end of read");
 
             if (!result)
             {
@@ -87,6 +99,8 @@ namespace SimpleTransferHost.Instance.Services.WebApi
             }
 
             await tcs.Task;
+
+            _logger.LogInformation("The end of read has been reached, all OK.");
 
             return Ok();
         }
