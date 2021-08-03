@@ -4,6 +4,8 @@ services:
     build: ./
     container_name: simple-file-transfer
     restart: always
+    ports:
+      - "8182:80"
     environment:
       - TZ=Europe/Moscow
     logging:
