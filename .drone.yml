@@ -17,7 +17,7 @@ steps:
         - cd docker.services/simple-transfer-host
         - git pull && docker-compose build && docker-compose up -d
 
-  - name: send telegram notification
+  - name: Send telegram notification
     image: appleboy/drone-telegram
     settings:
       token: 
