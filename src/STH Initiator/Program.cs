@@ -30,6 +30,8 @@ using var request = new HttpRequestMessage(HttpMethod.Post, TargetUri)
     Content = content,
 };
 
+client.DefaultRequestHeaders.ExpectContinue = true;
+
 httpProgressHandler.HttpSendProgress += (o, e) =>
 {
     Console.Write($"Uploading... {Math.Round((double)e.BytesTransferred / e.TotalBytes.Value * 100, 1)}%");
